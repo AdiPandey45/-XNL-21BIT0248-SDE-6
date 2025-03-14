@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import SecurityOverview from '@/components/dashboard/SecurityOverview';
@@ -12,6 +11,7 @@ import LoginForm from '@/components/auth/LoginForm';
 import FadeTransition from '@/components/transitions/FadeTransition';
 import ArchitectureDiagram from '@/components/dashboard/ArchitectureDiagram';
 import SecurityImplementation from '@/components/dashboard/SecurityImplementation';
+import { Check } from 'lucide-react';
 
 const Index: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -21,9 +21,7 @@ const Index: React.FC = () => {
   const [topThreats, setTopThreats] = useState<ThreatModelType[]>([]);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'architecture' | 'implementation'>('dashboard');
   
-  // Animation transition
   useEffect(() => {
-    // Simulating page load delay for smoother animations
     const timer = setTimeout(() => {
       setIsVisible(true);
       setIsLoading(false);
@@ -32,22 +30,18 @@ const Index: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
   
-  // Check for user on load
   useEffect(() => {
     const currentUser = getCurrentUser();
     setUser(currentUser);
     
-    // Get top vulnerabilities (critical and high)
     const criticalAndHigh = vulnerabilities
       .filter(v => v.severity === 'critical' || v.severity === 'high')
       .slice(0, 3);
     setTopVulnerabilities(criticalAndHigh);
     
-    // Get top threats
     setTopThreats(threatModels.slice(0, 2));
   }, []);
   
-  // If user is not logged in, show login form
   if (!user && !isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -137,7 +131,6 @@ const Index: React.FC = () => {
                         key={vulnerability.id}
                         show={isVisible} 
                         className="transform transition-all duration-500"
-                        // Stagger animations
                         duration={300 + (index * 100)}
                       >
                         <VulnerabilityCard vulnerability={vulnerability} />
