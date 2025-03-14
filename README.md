@@ -1,69 +1,64 @@
-# Welcome to your Lovable project
 
-## Project info
+# SecuritySentinel
 
-**URL**: https://lovable.dev/projects/d4842611-0619-4bf1-8e71-f080fdfafb30
+## Project Overview
 
-## How can I edit this code?
+SecuritySentinel is a comprehensive security monitoring and vulnerability assessment platform built with a focus on real-time security measures, penetration testing, and secure coding practices.
 
-There are several ways of editing your application.
+## Security Features
 
-**Use Lovable**
+- **Content Security Policy (CSP)**: Restricts sources of executable scripts
+- **HTTP Security Headers**: Implements X-Frame-Options, X-Content-Type-Options, etc.
+- **JWT Authentication**: Secure token-based authentication
+- **CSRF Protection**: Anti-CSRF tokens for state-changing requests
+- **Input Sanitization**: Prevents injection attacks
+- **Secure Cookie Configuration**: HttpOnly, Secure, and SameSite attributes
+- **Comprehensive Threat Modeling**: Visual representation of threats and mitigations
+- **Vulnerability Tracking**: Real-time monitoring of security vulnerabilities
+- **Security Score Calculation**: Quantitative measurement of security posture
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d4842611-0619-4bf1-8e71-f080fdfafb30) and start prompting.
+## Architecture
 
-Changes made via Lovable will be committed automatically to this repo.
+The application follows a layered security architecture:
 
-**Use your preferred IDE**
+1. **Client Layer**: React.js frontend with client-side validations
+2. **Security Gateway**: Implements security headers, CSRF protection, etc.
+3. **API Layer**: REST endpoints with authentication and authorization
+4. **Database Layer**: Secure data storage with parameterized queries
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Getting Started
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone the repository
+git clone <repository-url>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project directory
+cd security-sentinel
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Security Documentation
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- System Design Document: [docs/system_design.md](src/docs/system_design.md)
+- Threat Model: [docs/threat_model.md](src/docs/threat_model.md)
 
-**Use GitHub Codespaces**
+## Project Structure
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- `/src/components` - UI components
+- `/src/lib` - Utility functions and security configurations
+- `/src/pages` - Application pages
+- `/src/docs` - Security documentation
 
-## What technologies are used for this project?
+## Built With
 
-This project is built with .
-
-- Vite
+- React.js
 - TypeScript
-- React
-- shadcn-ui
 - Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d4842611-0619-4bf1-8e71-f080fdfafb30) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- shadcn/ui
+- react-router-dom
+- Vite

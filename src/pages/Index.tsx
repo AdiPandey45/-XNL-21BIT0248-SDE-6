@@ -10,6 +10,8 @@ import { getCurrentUser, User } from '@/lib/auth';
 import { toast } from '@/components/ui/sonner';
 import LoginForm from '@/components/auth/LoginForm';
 import FadeTransition from '@/components/transitions/FadeTransition';
+import ArchitectureDiagram from '@/components/dashboard/ArchitectureDiagram';
+import SecurityImplementation from '@/components/dashboard/SecurityImplementation';
 
 const Index: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -17,6 +19,7 @@ const Index: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [topVulnerabilities, setTopVulnerabilities] = useState<SecurityVulnerability[]>([]);
   const [topThreats, setTopThreats] = useState<ThreatModelType[]>([]);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'architecture' | 'implementation'>('dashboard');
   
   // Animation transition
   useEffect(() => {
@@ -97,54 +100,176 @@ const Index: React.FC = () => {
               </div>
               
               <div className="mt-4 md:mt-0 flex space-x-4">
-                <CustomButton variant="outline">Export Report</CustomButton>
-                <CustomButton variant="primary">Run Analysis</CustomButton>
+                <CustomButton 
+                  variant={activeTab === 'dashboard' ? 'primary' : 'outline'} 
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  Dashboard
+                </CustomButton>
+                <CustomButton 
+                  variant={activeTab === 'architecture' ? 'primary' : 'outline'} 
+                  onClick={() => setActiveTab('architecture')}
+                >
+                  Architecture
+                </CustomButton>
+                <CustomButton 
+                  variant={activeTab === 'implementation' ? 'primary' : 'outline'} 
+                  onClick={() => setActiveTab('implementation')}
+                >
+                  Implementation
+                </CustomButton>
               </div>
             </div>
             
-            <SecurityOverview />
+            {activeTab === 'dashboard' && (
+              <>
+                <SecurityOverview />
+                
+                <div className="mt-12 mb-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold">Top Vulnerabilities</h2>
+                    <CustomButton variant="ghost" size="sm">View All</CustomButton>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {topVulnerabilities.map((vulnerability, index) => (
+                      <FadeTransition 
+                        key={vulnerability.id}
+                        show={isVisible} 
+                        className="transform transition-all duration-500"
+                        // Stagger animations
+                        duration={300 + (index * 100)}
+                      >
+                        <VulnerabilityCard vulnerability={vulnerability} />
+                      </FadeTransition>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="mt-12 mb-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold">Threat Models</h2>
+                    <CustomButton variant="ghost" size="sm">View All</CustomButton>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {topThreats.map((threatModel, index) => (
+                      <FadeTransition 
+                        key={threatModel.id}
+                        show={isVisible} 
+                        className="transform transition-all duration-500"
+                        duration={600 + (index * 100)}
+                      >
+                        <ThreatModel threatModel={threatModel} />
+                      </FadeTransition>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {activeTab === 'architecture' && (
+              <div className="mt-8">
+                <FadeTransition show={isVisible}>
+                  <ArchitectureDiagram />
+                </FadeTransition>
+                
+                <div className="mt-8 bg-white rounded-xl border border-border p-6">
+                  <h3 className="text-lg font-medium mb-4">System Documentation</h3>
+                  <div className="flex gap-4 flex-wrap">
+                    <CustomButton 
+                      variant="outline" 
+                      onClick={() => window.open('/docs/system_design.md', '_blank')}
+                    >
+                      System Design Document
+                    </CustomButton>
+                    <CustomButton 
+                      variant="outline"
+                      onClick={() => window.open('/docs/threat_model.md', '_blank')}
+                    >
+                      Threat Model Document
+                    </CustomButton>
+                    <CustomButton 
+                      variant="outline"
+                      onClick={() => toast.info('This feature is not available in the demo')}
+                    >
+                      Security Audit Report
+                    </CustomButton>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'implementation' && (
+              <div className="mt-8">
+                <FadeTransition show={isVisible}>
+                  <SecurityImplementation />
+                </FadeTransition>
+                
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-xl border border-border p-6">
+                    <h3 className="text-lg font-medium mb-4">CI/CD Pipeline</h3>
+                    <ul className="space-y-2">
+                      <li className="flex items-center text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 text-green-500 mr-2">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <span>Automated security scanning</span>
+                      </li>
+                      <li className="flex items-center text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 text-green-500 mr-2">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <span>Dependency vulnerability checks</span>
+                      </li>
+                      <li className="flex items-center text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 text-green-500 mr-2">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <span>Static code analysis</span>
+                      </li>
+                      <li className="flex items-center text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 text-green-500 mr-2">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <span>Integration tests</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div className="bg-white rounded-xl border border-border p-6">
+                    <h3 className="text-lg font-medium mb-4">Deployment Security</h3>
+                    <ul className="space-y-2">
+                      <li className="flex items-center text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 text-green-500 mr-2">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <span>Docker containerization</span>
+                      </li>
+                      <li className="flex items-center text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 text-green-500 mr-2">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <span>HTTPS enforcement</span>
+                      </li>
+                      <li className="flex items-center text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 text-green-500 mr-2">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <span>Web Application Firewall</span>
+                      </li>
+                      <li className="flex items-center text-sm">
+                        <div className="flex-shrink-0 w-5 h-5 text-green-500 mr-2">
+                          <Check className="w-5 h-5" />
+                        </div>
+                        <span>Network isolation</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
           </FadeTransition>
-          
-          <div className="mt-12 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Top Vulnerabilities</h2>
-              <CustomButton variant="ghost" size="sm">View All</CustomButton>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {topVulnerabilities.map((vulnerability, index) => (
-                <FadeTransition 
-                  key={vulnerability.id}
-                  show={isVisible} 
-                  className="transform transition-all duration-500"
-                  // Stagger animations
-                  duration={300 + (index * 100)}
-                >
-                  <VulnerabilityCard vulnerability={vulnerability} />
-                </FadeTransition>
-              ))}
-            </div>
-          </div>
-          
-          <div className="mt-12 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Threat Models</h2>
-              <CustomButton variant="ghost" size="sm">View All</CustomButton>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {topThreats.map((threatModel, index) => (
-                <FadeTransition 
-                  key={threatModel.id}
-                  show={isVisible} 
-                  className="transform transition-all duration-500"
-                  duration={600 + (index * 100)}
-                >
-                  <ThreatModel threatModel={threatModel} />
-                </FadeTransition>
-              ))}
-            </div>
-          </div>
           
           <div className="mt-16 bg-white rounded-xl border border-border p-6 shadow-sm">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
