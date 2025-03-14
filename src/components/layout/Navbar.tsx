@@ -1,221 +1,175 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import CustomButton from '../ui/CustomButton';
-import { cn } from '@/lib/utils';
-import { User, getCurrentUser, logout } from '@/lib/auth';
+import { Menu, X, Shield, AlertTriangle, Home, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import CustomButton from '@/components/ui/CustomButton';
+import useMobile from '@/hooks/use-mobile';
 
 const Navbar: React.FC = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isMobile = useMobile();
   const location = useLocation();
   
-  // Track scroll for navbar appearance
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-  
-  // Check for user on load
-  useEffect(() => {
-    const currentUser = getCurrentUser();
-    setUser(currentUser);
-  }, []);
-  
-  const handleLogout = () => {
-    logout();
-    setUser(null);
-    toast.success('Successfully logged out');
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
-
-  const navLinks = [
-    { name: 'Dashboard', path: '/' },
-    { name: 'Vulnerabilities', path: '/vulnerabilities' },
-    { name: 'Threat Models', path: '/threats' },
-    { name: 'Security Tests', path: '/tests' }
-  ];
+  
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+  
+  const handleLoginClick = () => {
+    toast.info("Login functionality would be implemented here");
+  };
   
   return (
-    <header
-      className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6',
-        isScrolled ? 'py-3 bg-white/80 backdrop-blur-lg shadow-sm' : 'py-5 bg-transparent'
-      )}
-    >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center">
-          <Link 
-            to="/" 
-            className="text-2xl font-semibold text-primary flex items-center"
-          >
-            <span className="inline-block mr-2">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path 
-                  d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-                <path 
-                  d="M12 16V12" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-                <path 
-                  d="M12 8H12.01" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            SecuritySentinel
-          </Link>
-        </div>
-        
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                location.pathname === link.path 
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
-              )}
-            >
-              {link.name}
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-border shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center">
+              <Shield className="h-8 w-8 text-primary" />
+              <span className="ml-2 text-xl font-bold text-foreground">SecuritySentinel</span>
             </Link>
-          ))}
-        </nav>
-        
-        {/* User section */}
-        <div className="hidden md:flex items-center space-x-4">
-          {user ? (
-            <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium">
-                {user.name}
-              </span>
-              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-sm font-medium">
-                {user.name.charAt(0)}
-              </div>
-              <CustomButton
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-              >
-                Log Out
-              </CustomButton>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <Link to="/login">
-                <CustomButton variant="ghost" size="sm">
-                  Log In
-                </CustomButton>
-              </Link>
-              <Link to="/signup">
-                <CustomButton variant="primary" size="sm">
-                  Sign Up
-                </CustomButton>
-              </Link>
-            </div>
-          )}
-        </div>
-        
-        {/* Mobile menu button */}
-        <button 
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="flex items-center justify-center p-2 rounded-md text-primary md:hidden"
-        >
-          <span className="sr-only">Open main menu</span>
-          {isMenuOpen ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 12H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-        </button>
-      </div>
-      
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-4 pt-2 pb-3 space-y-1 bg-white/95 backdrop-blur-md shadow-lg rounded-lg mt-2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={cn(
-                  'block px-3 py-2 rounded-md text-base font-medium',
-                  location.pathname === link.path 
-                    ? 'text-primary bg-secondary'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-primary'
-                )}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {link.name}
-              </Link>
-            ))}
             
-            {user ? (
-              <div className="pt-2 border-t border-gray-200">
-                <div className="flex items-center px-3 py-2">
-                  <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center text-sm font-medium">
-                    {user.name.charAt(0)}
-                  </div>
-                  <span className="ml-3 text-sm font-medium">
-                    {user.name}
-                  </span>
-                </div>
-                <CustomButton
-                  variant="ghost"
-                  size="sm"
-                  fullWidth
-                  onClick={() => {
-                    handleLogout();
-                    setIsMenuOpen(false);
-                  }}
-                  className="mt-2"
+            {!isMobile && (
+              <div className="ml-10 flex items-baseline space-x-4">
+                <Link 
+                  to="/" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive('/') 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-foreground/70 hover:bg-secondary hover:text-foreground'
+                  }`}
                 >
-                  Log Out
-                </CustomButton>
-              </div>
-            ) : (
-              <div className="pt-2 border-t border-gray-200 flex flex-col space-y-2">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                  <CustomButton variant="ghost" size="sm" fullWidth>
-                    Log In
-                  </CustomButton>
+                  <span className="flex items-center">
+                    <Home className="w-4 h-4 mr-1.5" />
+                    Dashboard
+                  </span>
                 </Link>
-                <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
-                  <CustomButton variant="primary" size="sm" fullWidth>
-                    Sign Up
-                  </CustomButton>
+                
+                <Link 
+                  to="/vulnerabilities" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive('/vulnerabilities') 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-foreground/70 hover:bg-secondary hover:text-foreground'
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <AlertTriangle className="w-4 h-4 mr-1.5" />
+                    Vulnerabilities
+                  </span>
+                </Link>
+                
+                <Link 
+                  to="/threat-models" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive('/threat-models') 
+                      ? 'bg-primary/10 text-primary' 
+                      : 'text-foreground/70 hover:bg-secondary hover:text-foreground'
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <FileText className="w-4 h-4 mr-1.5" />
+                    Threat Models
+                  </span>
                 </Link>
               </div>
             )}
           </div>
+          
+          <div className="flex items-center">
+            {!isMobile && (
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={handleLoginClick}
+                className="mr-3"
+              >
+                Log in
+              </CustomButton>
+            )}
+            
+            {isMobile && (
+              <button
+                onClick={toggleMenu}
+                className="inline-flex items-center justify-center p-2 rounded-md text-foreground focus:outline-none"
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Mobile menu */}
+      {isMobile && isMenuOpen && (
+        <div className="bg-white border-b border-border shadow-sm">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <Link
+              to="/"
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                isActive('/') 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-foreground hover:bg-secondary hover:text-foreground'
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <span className="flex items-center">
+                <Home className="w-5 h-5 mr-2" />
+                Dashboard
+              </span>
+            </Link>
+            
+            <Link
+              to="/vulnerabilities"
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                isActive('/vulnerabilities') 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-foreground hover:bg-secondary hover:text-foreground'
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <span className="flex items-center">
+                <AlertTriangle className="w-5 h-5 mr-2" />
+                Vulnerabilities
+              </span>
+            </Link>
+            
+            <Link
+              to="/threat-models"
+              className={`block px-3 py-2 rounded-md text-base font-medium ${
+                isActive('/threat-models') 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-foreground hover:bg-secondary hover:text-foreground'
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <span className="flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Threat Models
+              </span>
+            </Link>
+            
+            <div className="pt-4">
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  handleLoginClick();
+                  setIsMenuOpen(false);
+                }}
+                className="w-full"
+              >
+                Log in
+              </CustomButton>
+            </div>
+          </div>
         </div>
       )}
-    </header>
+    </nav>
   );
 };
 

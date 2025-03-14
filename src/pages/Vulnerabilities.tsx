@@ -1,23 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Check, AlertTriangle, Shield, RefreshCw } from 'lucide-react';
+import { Check, AlertTriangle, Shield, RefreshCw, FileText, Download } from 'lucide-react';
 import VulnerabilityCard from '@/components/dashboard/VulnerabilityCard';
 import CustomButton from '@/components/ui/CustomButton';
 import { vulnerabilities } from '@/lib/securityData';
 import FadeTransition from '@/components/transitions/FadeTransition';
 import Navbar from '@/components/layout/Navbar';
-
-// Define security test types
-type TestStatus = 'idle' | 'running' | 'success' | 'failed';
-type SecurityTest = {
-  id: string;
-  name: string;
-  description: string;
-  status: TestStatus;
-  result?: string;
-  details?: string[];
-};
+import { SecurityTestItem, SecurityTest, SecurityTester } from '@/components/security/SecurityTestEngine';
+import { applySecurityHeaders } from '@/lib/securityConfig';
 
 const Vulnerabilities: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -54,16 +45,27 @@ const Vulnerabilities: React.FC = () => {
     }
   ]);
   const [activeScanId, setActiveScanId] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { passed: number, failed: number }>>({
+    'sql-injection': { passed: 0, failed: 0 },
+    'xss': { passed: 0, failed: 0 },
+    'auth-bypass': { passed: 0, failed: 0 },
+    'csrf': { passed: 0, failed: 0 },
+    'security-headers': { passed: 0, failed: 0 }
+  });
+  const [lastScanTime, setLastScanTime] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(true);
     }, 300);
     
+    // Apply security headers for tests
+    applySecurityHeaders();
+    
     return () => clearTimeout(timer);
   }, []);
 
-  // Simulate running a security test
+  // Run a security test and track historical results
   const runSecurityTest = async (testId: string) => {
     // Set the test to running state
     setSecurityTests(prev => 
@@ -74,111 +76,181 @@ const Vulnerabilities: React.FC = () => {
     
     setActiveScanId(testId);
     
-    // Simulate API call with delay
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    // Determine test results (simulated)
-    const testResults = simulateTestResults(testId);
-    
-    // Update test status
-    setSecurityTests(prev => 
-      prev.map(test => 
-        test.id === testId ? { 
-          ...test, 
-          status: testResults.success ? 'success' : 'failed',
-          result: testResults.message,
-          details: testResults.details
-        } : test
-      )
-    );
-    
-    // Show toast notification
-    if (testResults.success) {
-      toast.success(`${testResults.message}`);
-    } else {
-      toast.error(`${testResults.message}`);
+    try {
+      // Get the test method based on testId
+      let testResult;
+      switch (testId) {
+        case 'sql-injection':
+          testResult = await SecurityTester.testSqlInjection();
+          break;
+        case 'xss':
+          testResult = await SecurityTester.testXss();
+          break;
+        case 'auth-bypass':
+          testResult = await SecurityTester.testAuthBypass();
+          break;
+        case 'csrf':
+          testResult = await SecurityTester.testCsrf();
+          break;
+        case 'security-headers':
+          testResult = await SecurityTester.testSecurityHeaders();
+          break;
+        default:
+          throw new Error(`Unknown test: ${testId}`);
+      }
+      
+      // Update test status
+      setSecurityTests(prev => 
+        prev.map(test => 
+          test.id === testId ? { 
+            ...test, 
+            status: testResult.success ? 'success' : 'failed',
+            result: testResult.message,
+            details: testResult.details
+          } : test
+        )
+      );
+      
+      // Update test results history
+      setTestResults(prev => ({
+        ...prev,
+        [testId]: {
+          passed: prev[testId].passed + (testResult.success ? 1 : 0),
+          failed: prev[testId].failed + (testResult.success ? 0 : 1)
+        }
+      }));
+      
+      // Show toast notification
+      if (testResult.success) {
+        toast.success(`${testResult.message}`);
+      } else {
+        toast.error(`${testResult.message}`);
+      }
+      
+      // Update last scan time
+      setLastScanTime(new Date().toISOString());
+    } catch (error) {
+      console.error(`Error running test ${testId}:`, error);
+      toast.error(`Test failed to run: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Update test status to failed
+      setSecurityTests(prev => 
+        prev.map(test => 
+          test.id === testId ? { 
+            ...test, 
+            status: 'failed',
+            result: 'Test execution failed',
+            details: [`Error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+          } : test
+        )
+      );
+    } finally {
+      setActiveScanId(null);
     }
-    
-    setActiveScanId(null);
   };
   
   // Run all security tests
   const runAllTests = async () => {
     toast.info("Starting comprehensive security scan...");
     
-    // Run tests sequentially
-    for (const test of securityTests) {
-      await runSecurityTest(test.id);
+    try {
+      // Set all tests to running state
+      setSecurityTests(prev => prev.map(test => ({ ...test, status: 'running' })));
+      
+      // Run tests sequentially via our test engine
+      await SecurityTester.runAllTests((testId, result) => {
+        // Update test status as each test completes
+        setSecurityTests(prev => 
+          prev.map(test => 
+            test.id === testId ? { 
+              ...test, 
+              status: result.success ? 'success' : 'failed',
+              result: result.message,
+              details: result.details
+            } : test
+          )
+        );
+        
+        // Update test results history
+        setTestResults(prev => ({
+          ...prev,
+          [testId]: {
+            passed: prev[testId].passed + (result.success ? 1 : 0),
+            failed: prev[testId].failed + (result.success ? 0 : 1)
+          }
+        }));
+        
+        // Show individual test toast
+        if (result.success) {
+          toast.success(`${result.message}`);
+        } else {
+          toast.error(`${result.message}`);
+        }
+      });
+      
+      // Update last scan time
+      setLastScanTime(new Date().toISOString());
+      
+      toast.success("Comprehensive security scan completed");
+    } catch (error) {
+      console.error("Error running all tests:", error);
+      toast.error(`Security scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    
-    toast.success("Comprehensive security scan completed");
   };
   
-  // Simulate test results
-  const simulateTestResults = (testId: string): {
-    success: boolean;
-    message: string;
-    details: string[];
-  } => {
-    // This would be real test logic in a production environment
-    switch (testId) {
-      case 'sql-injection':
-        return {
-          success: Math.random() > 0.3,
-          message: Math.random() > 0.3 
-            ? "No SQL injection vulnerabilities detected" 
-            : "SQL injection vulnerability detected",
-          details: Math.random() > 0.3 
-            ? ["All input parameters are properly sanitized", "Parameterized queries in use"] 
-            : ["Vulnerable endpoint detected: /api/users", "Input sanitization missing on userId parameter"]
-        };
-      case 'xss':
-        return {
-          success: Math.random() > 0.4,
-          message: Math.random() > 0.4 
-            ? "XSS protection measures verified" 
-            : "XSS vulnerability detected in user profile",
-          details: Math.random() > 0.4 
-            ? ["Content Security Policy implemented", "Output encoding working correctly"] 
-            : ["Insufficient output encoding on profile description", "CSP not blocking script execution"]
-        };
-      case 'auth-bypass':
-        return {
-          success: Math.random() > 0.2,
-          message: Math.random() > 0.2 
-            ? "Authentication mechanisms secure" 
-            : "Potential authentication bypass detected",
-          details: Math.random() > 0.2 
-            ? ["JWT validation working correctly", "Rate limiting effective against brute force"] 
-            : ["Token validation weakness detected", "Password reset flow vulnerable to enumeration"]
-        };
-      case 'csrf':
-        return {
-          success: Math.random() > 0.1,
-          message: Math.random() > 0.1 
-            ? "CSRF protection verified" 
-            : "CSRF vulnerability detected",
-          details: Math.random() > 0.1 
-            ? ["CSRF tokens implemented on all forms", "SameSite cookie attributes set correctly"] 
-            : ["Missing CSRF token on /api/profile/update", "Cookie missing SameSite attribute"]
-        };
-      case 'security-headers':
-        return {
-          success: Math.random() > 0.5,
-          message: Math.random() > 0.5 
-            ? "Security headers properly configured" 
-            : "Missing critical security headers",
-          details: Math.random() > 0.5 
-            ? ["Content-Security-Policy implemented", "X-Content-Type-Options set to nosniff"] 
-            : ["Missing X-Frame-Options header", "Content-Security-Policy not enforcing strict rules"]
-        };
-      default:
-        return {
-          success: true,
-          message: "Test completed",
-          details: ["No specific details available"]
-        };
-    }
+  // Generate a security report
+  const generateSecurityReport = () => {
+    const passedTests = securityTests.filter(test => test.status === 'success').length;
+    const failedTests = securityTests.filter(test => test.status === 'failed').length;
+    const totalVulnerabilities = vulnerabilities.length;
+    const resolvedVulnerabilities = vulnerabilities.filter(v => v.status === 'resolved').length;
+    
+    const report = `# Security Test Report
+Generated: ${new Date().toLocaleString()}
+
+## Security Test Results
+Total Tests Run: ${passedTests + failedTests}
+- Passed: ${passedTests}
+- Failed: ${failedTests}
+- Success Rate: ${passedTests > 0 ? Math.round((passedTests / (passedTests + failedTests)) * 100) : 0}%
+
+## Test Details
+${securityTests.map(test => `
+### ${test.name}
+**Status:** ${test.status === 'success' ? '✅ Passed' : test.status === 'failed' ? '❌ Failed' : '⏳ Not Run'}
+${test.result ? `**Result:** ${test.result}` : ''}
+${test.details ? `**Details:**\n${test.details.map(detail => `- ${detail}`).join('\n')}` : ''}
+`).join('\n')}
+
+## Known Vulnerabilities
+Total Vulnerabilities: ${totalVulnerabilities}
+- Resolved: ${resolvedVulnerabilities}
+- Open: ${totalVulnerabilities - resolvedVulnerabilities}
+
+${vulnerabilities.slice(0, 5).map(vuln => `
+### ${vuln.name}
+**Severity:** ${vuln.severity}
+**Status:** ${vuln.status}
+**Description:** ${vuln.description}
+**Affected Components:** ${vuln.affectedComponents.join(', ')}
+`).join('\n')}
+
+## Recommendations
+1. Address failed security tests immediately
+2. Implement proper input validation for all user inputs
+3. Ensure all security headers are properly configured
+4. Regularly update dependencies to patch known vulnerabilities
+5. Implement CSP to mitigate XSS attacks
+`;
+
+    const dataUri = `data:text/markdown;charset=utf-8,${encodeURIComponent(report)}`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', `security-report-${new Date().toISOString().slice(0, 10)}.md`);
+    linkElement.click();
+    
+    toast.success("Security report generated successfully");
   };
 
   return (
@@ -196,7 +268,15 @@ const Vulnerabilities: React.FC = () => {
                 </p>
               </div>
               
-              <div className="mt-4 md:mt-0">
+              <div className="mt-4 md:mt-0 space-x-3 flex">
+                <CustomButton 
+                  variant="outline" 
+                  onClick={generateSecurityReport}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Generate Report
+                </CustomButton>
+                
                 <CustomButton 
                   variant="primary" 
                   onClick={runAllTests}
@@ -218,98 +298,72 @@ const Vulnerabilities: React.FC = () => {
             </div>
             
             <div className="bg-white rounded-xl border border-border p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Security Tests</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Security Tests</h2>
+                
+                {lastScanTime && (
+                  <div className="text-sm text-muted-foreground">
+                    Last scan: {new Date(lastScanTime).toLocaleString()}
+                  </div>
+                )}
+              </div>
               
               <div className="space-y-4">
                 {securityTests.map((test) => (
-                  <div key={test.id} className="bg-gray-50 rounded-lg p-4 border border-border">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                      <div>
-                        <div className="flex items-center">
-                          <h3 className="text-lg font-medium">{test.name}</h3>
-                          <div className="ml-3">
-                            {test.status === 'idle' && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Ready
-                              </span>
-                            )}
-                            {test.status === 'running' && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Running
-                              </span>
-                            )}
-                            {test.status === 'success' && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Passed
-                              </span>
-                            )}
-                            {test.status === 'failed' && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                Failed
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">{test.description}</p>
-                      </div>
-                      
-                      <CustomButton 
-                        variant="outline" 
-                        size="sm"
-                        className="mt-3 sm:mt-0"
-                        onClick={() => runSecurityTest(test.id)}
-                        disabled={test.status === 'running' || activeScanId !== null}
-                      >
-                        {test.status === 'running' ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-                            Running...
-                          </>
-                        ) : (
-                          'Run Test'
-                        )}
-                      </CustomButton>
-                    </div>
-                    
-                    {test.status === 'success' && (
-                      <div className="mt-3 pl-4 border-l-2 border-green-500">
-                        <p className="text-sm text-green-700 font-medium">{test.result}</p>
-                        {test.details && (
-                          <ul className="mt-2 space-y-1">
-                            {test.details.map((detail, index) => (
-                              <li key={index} className="flex items-start text-xs text-muted-foreground">
-                                <Check className="text-green-500 w-4 h-4 mr-1 flex-shrink-0 mt-0.5" />
-                                {detail}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-                    
-                    {test.status === 'failed' && (
-                      <div className="mt-3 pl-4 border-l-2 border-red-500">
-                        <p className="text-sm text-red-700 font-medium">{test.result}</p>
-                        {test.details && (
-                          <ul className="mt-2 space-y-1">
-                            {test.details.map((detail, index) => (
-                              <li key={index} className="flex items-start text-xs text-muted-foreground">
-                                <AlertTriangle className="text-red-500 w-4 h-4 mr-1 flex-shrink-0 mt-0.5" />
-                                {detail}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <SecurityTestItem 
+                    key={test.id}
+                    test={test}
+                    onRunTest={runSecurityTest}
+                    disabled={activeScanId !== null}
+                  />
                 ))}
+              </div>
+              
+              {/* Test history metrics */}
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-5 gap-4">
+                {Object.entries(testResults).map(([testId, results]) => {
+                  const test = securityTests.find(t => t.id === testId);
+                  const totalRuns = results.passed + results.failed;
+                  const successRate = totalRuns > 0 ? (results.passed / totalRuns) * 100 : 0;
+                  
+                  return (
+                    <div key={testId} className="bg-gray-50 rounded-lg p-3 border border-border">
+                      <h4 className="text-sm font-medium truncate">{test?.name.replace(' Test', '')}</h4>
+                      <div className="mt-2 w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full ${
+                            successRate > 70 ? 'bg-green-500' : 
+                            successRate > 40 ? 'bg-amber-500' : 
+                            'bg-red-500'
+                          }`} 
+                          style={{ width: `${Math.max(5, successRate)}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                        <div>Success: {results.passed}/{totalRuns}</div>
+                        <div>{Math.round(successRate)}%</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold">Known Vulnerabilities</h2>
+                
+                <div className="flex space-x-2">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    Critical: {vulnerabilities.filter(v => v.severity === 'critical').length}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    High: {vulnerabilities.filter(v => v.severity === 'high').length}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Open: {vulnerabilities.filter(v => v.status === 'open').length}
+                  </span>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -323,6 +377,17 @@ const Vulnerabilities: React.FC = () => {
                     <VulnerabilityCard vulnerability={vulnerability} />
                   </FadeTransition>
                 ))}
+              </div>
+              
+              <div className="mt-6 text-center">
+                <CustomButton
+                  variant="outline"
+                  onClick={() => {
+                    toast.info("In a real application, this would navigate to a complete vulnerability database");
+                  }}
+                >
+                  View All Vulnerabilities
+                </CustomButton>
               </div>
             </div>
           </FadeTransition>
