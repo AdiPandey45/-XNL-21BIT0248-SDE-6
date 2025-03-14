@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Check, AlertTriangle, Shield, RefreshCw } from 'lucide-react';
-import { VulnerabilityCard } from '@/components/dashboard/VulnerabilityCard';
+import VulnerabilityCard from '@/components/dashboard/VulnerabilityCard';
 import CustomButton from '@/components/ui/CustomButton';
 import { vulnerabilities } from '@/lib/securityData';
 import FadeTransition from '@/components/transitions/FadeTransition';
