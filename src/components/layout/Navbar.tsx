@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import CustomButton from '../ui/CustomButton';
 import { cn } from '@/lib/utils';
 import { User, getCurrentUser, logout } from '@/lib/auth';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);

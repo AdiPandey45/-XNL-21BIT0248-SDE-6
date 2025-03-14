@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomButton from '../ui/CustomButton';
 import { login, getCurrentUser } from '@/lib/auth';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import FadeTransition from '../transitions/FadeTransition';
 
 const LoginForm: React.FC = () => {

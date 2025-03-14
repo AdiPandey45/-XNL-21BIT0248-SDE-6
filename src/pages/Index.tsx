@@ -6,12 +6,12 @@ import ThreatModel from '@/components/dashboard/ThreatModel';
 import CustomButton from '@/components/ui/CustomButton';
 import { vulnerabilities, threatModels, SecurityVulnerability, ThreatModel as ThreatModelType } from '@/lib/securityData';
 import { getCurrentUser, User } from '@/lib/auth';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
+import { Check } from 'lucide-react';
 import LoginForm from '@/components/auth/LoginForm';
 import FadeTransition from '@/components/transitions/FadeTransition';
 import ArchitectureDiagram from '@/components/dashboard/ArchitectureDiagram';
 import SecurityImplementation from '@/components/dashboard/SecurityImplementation';
-import { Check } from 'lucide-react';
 
 const Index: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
