@@ -58,4 +58,35 @@ SecuritySentinel is a comprehensive security monitoring and vulnerability assess
 - Web Application Firewall (WAF) implementation
 - Regular security audits and penetration testing
 
+## Development & Security Tools
+
+### Code Generation & Security Analysis
+- **SonarQube**: Static code analysis to identify security vulnerabilities and code smells
+- **OWASP Dependency-Check**: Automated scanning of dependencies for known CVEs
+- **ESLint with security plugins**: Custom rules to catch security issues during development
+
+### Security & Penetration Testing
+- **OWASP ZAP / Burp Suite**: Automated and manual penetration testing
+- **Snyk**: Continuous monitoring of dependencies for vulnerabilities
+- **JWT Decoder**: Token inspection and validation
+
+### Containerization & Secure Deployment
+- **Docker**: Application containerization with minimal, secure base images
+- **Kubernetes**: Container orchestration with security policies
+- **Helm**: Secure configuration management for different environments
+
+### CI/CD Integration
+- **GitHub Actions / GitLab CI**: 
+  - Automated security scanning
+  - SAST (Static Application Security Testing)
+  - DAST (Dynamic Application Security Testing)
+  - Container image scanning
+  - Secret detection
+
+### Monitoring & Incident Response
+- **ELK Stack**: Security event monitoring and alerting
+- **Prometheus/Grafana**: System monitoring with security dashboards
+- **Incident response playbooks**: Automated and manual response procedures
+
 ![System Architecture Diagram](../assets/architecture_diagram.png)
+
